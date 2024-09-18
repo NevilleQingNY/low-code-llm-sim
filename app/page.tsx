@@ -7,7 +7,6 @@ import {
     addEdge,
     useNodesState,
     useEdgesState,
-    Controls,
     useReactFlow,
     Node,
     Edge,

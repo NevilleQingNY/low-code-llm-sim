@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect, useMemo, ReactNode, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { Handle, Position, useReactFlow, Node, Edge } from '@xyflow/react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +25,8 @@ interface CustomOutputNodeProps {
     data: {
         name: string;
         label: string;
+        prompt?: string; // Add this line to properly type the prompt
+        model?: string;  // Add this line to properly type the model
         arr?: Node[];
     };
     isConnectable: boolean;
@@ -133,7 +135,7 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
     }, []);
 
     /**
-     * 处理图片删除
+     * 处理图片除
      * @param imgToDelete 要删除的图片
      */
     const handleImageDelete = (imgToDelete: UploadedImage) => {
@@ -147,8 +149,6 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
     const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-
-
         if (!inputText.trim()) {
             toast({
                 title: "Error",
@@ -160,7 +160,6 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
 
         setIsGenerating(true)
         let cur = ''
-
 
         for (let node of connectedNodes) {
             let textContent = cur ?
@@ -178,13 +177,13 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
                 }))
             ] : textContent
 
-
             setActiveTab(node.id)
-            const newMessages: (CoreSystemMessage | CoreUserMessage | CoreAssistantMessage | CoreToolMessage)[] = [
+            const systemContent: string = typeof node.data.prompt === 'string' ? node.data.prompt : '总结这部分内容';
+            const newMessages: any[] = [
                 ...messages,
                 {
                     role: 'system',
-                    content: node.data.prompt || '总结这部分内容' as string,
+                    content: systemContent,
                 },
                 {
                     role: 'user',
@@ -192,13 +191,11 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
                 }
             ];
 
-
             setMessages((pre) => [
                 ...pre,
                 ...newMessages
             ]);
             setInputText('');
-
 
             const result = await continueConversation(newMessages, node.data.model as string);
 
@@ -221,8 +218,7 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
         }
         setIsGenerating(false)
 
-
-    }, [inputText, connectedNodes, uploadedImages]);
+    }, [inputText, connectedNodes, uploadedImages, messages]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -260,7 +256,7 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
                                                         value={node.id}
                                                         className="inline-flex items-center justify-center whitespace-nowrap px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
                                                     >
-                                                        {node?.data?.name || '未命名'}
+                                                        {(node.data?.name as string) ?? '未命名'}
                                                     </TabsTrigger>
                                                 ))}
                                             </TabsList>
@@ -272,9 +268,9 @@ export const CustomOutputNode: React.FC<CustomOutputNodeProps> = ({ id, data, is
                                                         <h3 className="font-semibold mb-2">Current Parameters:</h3>
                                                         <div className="grid grid-cols-2 gap-2 text-sm">
                                                             <div className="font-medium">Prompt:</div>
-                                                            <div>{node.data.prompt || 'Default: Summarize this content'}</div>
+                                                            <div>{node.data.prompt as string || 'Default: Summarize this content'}</div>
                                                             <div className="font-medium">Model:</div>
-                                                            <div>{node.data.model || 'Default: GPT-3.5'}</div>
+                                                            <div>{node.data.model as string || 'Default: GPT-4o'}</div>
                                                         </div>
                                                     </div>
                                                     <Separator />
